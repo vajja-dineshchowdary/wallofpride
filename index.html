@@ -88,7 +88,7 @@
         )
         .force("charge", d3.forceManyBody().strength(-15));
 
-      d3.csv("data.csv", types, function(error, graph) {
+      d3.csv("https://vajja-dineshchowdary.github.io/wallofpride/data.csv", types, function(error, graph) {
         if (error) throw error;
 
         // sort the nodes so that the bigger ones are at the back
