@@ -6,41 +6,45 @@
     <meta http-equiv="X-UA-Compatible" content="ie=edge" />
     <title>D3</title>
     <style>
-      .node circle {
-        stroke: #3a403d;
-        stroke-width: 0.5px;
+      body {
+        margin: 0;
       }
-      text {
-        font: 10px sans-serif;
+      canvas {
+        width: 100%;
+        height: 100%;
       }
     </style>
   </head>
   <body>
-    <script src="https://d3js.org/d3.v3.min.js"></script>
-    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/107/three.min.js"></script>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
     <script>
-      var width = window.innerWidth,
+
+
+var results;
+
+async function showGithubUsers() {
+
+    function getusers() {
+      let url = `https://api.github.com/users`;
+      // let url = `https://jsonplaceholder.typicode.com/photos`;
+      return fetch(url).then(response => response.json());
+    }
+
+    results = await getusers();
+console.log(results)
+
+    var svg = d3.select("body").append("svg").attr("id", "d3svg")
+    .attr("width", window.innerWidth)
+    .attr("height", window.innerHeight);
+
+// var def = 
+var width = window.innerWidth,
         height = window.innerHeight,
         sizeDivisor = 100,
         nodePadding = 2.5;
-        var tooltip = d3.select("body")
-    .append("div")
-    .style("position", "absolute")
-    .style("z-index", "10")
-    .style("visibility", "hidden")
-    .style("color", "white")
-    .style("padding", "8px")
-    .style("background-color", "rgba(0, 0, 0, 0.75)")
-    .style("border-radius", "6px")
-    .style("font", "12px sans-serif")
-    .text("tooltip");
-      var svg = d3
-        .select("body")
-        .append("svg")
-        .attr("width", width)
-        .attr("height", height)
-    .attr("class", "bubble");
-      var tooltip = d3
+
+var tooltip = d3
         .select("body")
         .append("div")
         .style("position", "absolute")
@@ -52,7 +56,8 @@
         .style("border-radius", "6px")
         .style("font", "12px sans-serif")
         .text("tooltip");
-      var color = d3.scaleOrdinal([
+
+        var color = d3.scaleOrdinal([
         "#66c2a5",
         "#fc8d62",
         "#8da0cb",
@@ -63,21 +68,31 @@
         "#b3b3b3"
       ]);
 
+
+var radiusScale = d3.scaleSqrt().domain([0, 30]).range([10, 50]);
+
+
       var simulation = d3
         .forceSimulation()
         .force(
           "forceX",
           d3
             .forceX()
-            .strength(0.1)
+            .strength(0.5)
             .x(width * 0.5)
         )
         .force(
           "forceY",
           d3
             .forceY()
-            .strength(0.1)
+            .strength(0.5)
             .y(height * 0.5)
+        )
+        .force('collide',
+          d3
+            .forceCollide(function(d){
+              return radiusScale(d.id) + 5;
+            })
         )
         .force(
           "center",
@@ -88,63 +103,61 @@
         )
         .force("charge", d3.forceManyBody().strength(-15));
 
-      d3.csv("https://vajja-dineshchowdary.github.io/wallofpride/data.csv", types, function(error, graph) {
-        if (error) throw error;
 
-        // sort the nodes so that the bigger ones are at the back
-        graph = graph.sort(function(a, b) {
-          return b.size - a.size;
-        });
 
-        //update the simulation based on the data
-        simulation
-          .nodes(graph)
-          .force(
-            "collide",
-            d3
-              .forceCollide()
-              .strength(0.5)
-              .radius(function(d) {
-                return d.radius + nodePadding;
-              })
-              .iterations(1)
-          )
-          .on("tick", function(d) {
-            node
-              .attr("cx", function(d) {
-                return d.x;
-              })
-              .attr("cy", function(d) {
-                return d.y;
-              });
-          });
 
-        var node = svg
-          .append("g")
-          .attr("class", "node")
-          .selectAll("circle")
-          .data(graph)
+//Pattern injection
+var pattern = svg.append("defs")
+          .attr("class", "defs-node")
+          .selectAll("pattern")
+          .data(results)
           .enter()
-          .append("circle")
-          .attr("r", function(d) {
-            return d.radius;
+          .append("pattern")
+          .attr('class','sub-node')
+		.attr("id", function(d){
+      return d.id
+    })
+    .attr("width","100%")
+    .attr("height", "100%")
+    .attr("patternContentUnits","objectBoundingBox")
+    .append("image")
+		.attr("width", "1").attr("height", "1").attr("preserveAspectRatio", "none").attr("xmlns:xlink", "http //www.w3.org/1999/xlink").attr("xlink:href", function(d){ return d.avatar_url});
+
+
+
+  
+
+//Shape design
+var circles = svg.selectAll("circle")
+.data(results)
+.enter()
+.append('g')
+.attr('class','sub-node')
+.attr("id", function(d){
+  return d.id
+})
+.append("circle")
+.attr("r", function(d){
+return radiusScale(d.id);
+})
+.attr("fill", function(d){
+    return `url(#${d.id})`
+  })
+  .on('click', function(d){
+    console.log(d);
+    alert(d.login)
+  })
+  .on("mouseover", function(d) {
+            tooltip.text(d.login + ": " + d.id);
+            tooltip.style("visibility", "visible");
           })
-          .on("mouseover", function(d) {
-              tooltip.text(d.country + ": " + d.gdp);
-              tooltip.style("visibility", "visible");
-      })
-      .on("mousemove", function() {
-          return tooltip.style("top", (d3.event.pageY-10)+"px").style("left",(d3.event.pageX+10)+"px");
-      })
-      .on("mouseout", function(){return tooltip.style("visibility", "hidden");})
-         .attr("fill", function(d) {
-            return color(d.continent);
+          .on("mousemove", function() {
+            return tooltip
+              .style("top", d3.event.pageY - 10 + "px")
+              .style("left", d3.event.pageX + 10 + "px");
           })
-          .attr("cx", function(d) {
-            return d.x;
-          })
-          .attr("cy", function(d) {
-            return d.y;
+          .on("mouseout", function() {
+            return tooltip.style("visibility", "hidden");
           })
           .call(
             d3
@@ -153,11 +166,28 @@
               .on("drag", dragged)
               .on("end", dragended)
           );
-      });
+
+          simulation.nodes(results)
+          .on('tick', ticked);
+   
+
+          function ticked(params) {
+              circles
+              .attr('cx', function(d){
+                return d.x
+              })
+              .attr('cy', function(d){
+                return d.y
+              })
+    } 
 
 
 
-      function dragstarted(d) {
+svg.selectAll('.sub-node')
+    .append('a')
+    .attr("xmlns:xlink", "http //www.w3.org/1999/xlink").attr("xlink:href", function(d){ return d.url})
+
+          function dragstarted(d) {
         if (!d3.event.active) simulation.alphaTarget(0.03).restart();
         d.fx = d.x;
         d.fy = d.y;
@@ -173,13 +203,10 @@
         d.fx = null;
         d.fy = null;
       }
+}
 
-      function types(d) {
-        d.gdp = +d.gdp;
-        d.size = +d.gdp / sizeDivisor;
-        d.size < 3 ? (d.radius = 3) : (d.radius = d.size);
-        return d;
-      }
+showGithubUsers();
+</script>
     </script>
   </body>
 </html>
