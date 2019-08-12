@@ -69,7 +69,7 @@ var tooltip = d3
       ]);
 
 
-var radiusScale = d3.scaleSqrt().domain([0, 30]).range([10, 50]);
+var radiusScale = d3.scaleSqrt().domain([0, 30]).range([1, 50]);
 
 
       var simulation = d3
@@ -88,11 +88,23 @@ var radiusScale = d3.scaleSqrt().domain([0, 30]).range([10, 50]);
             .strength(0.5)
             .y(height * 0.5)
         )
+        // .force(
+        //     "collide",
+        //     d3
+        //       .forceCollide()
+        //       .strength(0.5)
+        //       .radius(function(d) {
+        //         return d.radius + nodePadding;
+        //       })
+        //       .iterations(1)
+        //   )
         .force('collide',
           d3
             .forceCollide(function(d){
               return radiusScale(d.id) + 5;
             })
+            .strength(0.5)
+            .iterations(1)
         )
         .force(
           "center",
@@ -170,6 +182,9 @@ return radiusScale(d.id);
               .on("end", dragended)
           );
 
+          results = results.sort(function(a, b) {
+          return b.id - a.id;
+        });
           simulation.nodes(results)
           .on('tick', ticked);
    
