@@ -58,11 +58,11 @@ var tooltip = d3
         .text("tooltip");
 
         var color = d3.scaleOrdinal([
-        "#66c2a5",
         "#fc8d62",
         "#8da0cb",
         "#e78ac3",
         "#a6d854",
+        "#66c2a5",
         "#ffd92f",
         "#e5c494",
         "#b3b3b3"
@@ -141,6 +141,9 @@ var circles = svg.selectAll("circle")
 return radiusScale(d.id);
 })
 .attr("fill", function(d){
+    if (d.id < 8) {
+      return '#8da0cb';
+    }
     return `url(#${d.id})`
   })
   .on('click', function(d){
